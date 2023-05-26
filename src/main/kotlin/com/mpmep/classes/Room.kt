@@ -47,6 +47,7 @@ class Room {
                         playersFinished[1]?.send(Frame.Text(winStatus))
                         playersFinished[2]?.send(Frame.Text(loseStatus))
                     }
+                    roomState.value = GameStatus.SHUTDOWN
                 }
             } else {
                 val enemy = players.find {

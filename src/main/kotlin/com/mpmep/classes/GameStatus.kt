@@ -10,5 +10,6 @@ enum class GameStatus {
     ENEMY_ANSWERED,
     FINISH,
     WIN,
-    LOSE
+    LOSE,
+    SHUTDOWN
 }
