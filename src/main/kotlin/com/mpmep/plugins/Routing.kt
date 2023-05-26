@@ -2,11 +2,16 @@ package com.mpmep.plugins
 
 import com.mpmep.classes.GameStatus
 import com.mpmep.classes.Room
+import com.mpmep.plugins.core.Game
 import io.ktor.server.routing.*
 import io.ktor.server.response.*
 import io.ktor.server.application.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -31,20 +36,18 @@ fun Application.configureRouting() {
                     it.id == id
                 } ?: throw IllegalArgumentException("Room was not found")
                 room.addPlayer(this)
-                val game = room.game
-                for (frame in incoming){
-                    if (frame is Frame.Text) {
-                        val text = frame.readText()
-                        game.currentExample.collect { example ->
-                            val challengeStatus = game.checkAnswer(example, text.toInt())
-                            val status: GameStatus = if (!challengeStatus) {
-                                GameStatus.BAD
-                            } else {
-                                GameStatus.TRUE
-                            }
-                            val statusString = Json.encodeToString(status)
-                            outgoing.send(Frame.Text(statusString))
+                room.roomState.collectLatest {
+                    when (it){
+                        GameStatus.AWAIT -> {
+                            val status = Json.encodeToString(GameStatus.AWAIT)
+                            send(Frame.Text(status))
                         }
+                        GameStatus.READY -> {
+                            val status = Json.encodeToString(GameStatus.READY)
+                            send(Frame.Text(status))
+                            room.startGame(this)
+                        }
+                        else ->{}
                     }
                 }
             }
