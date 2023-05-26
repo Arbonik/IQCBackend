@@ -36,8 +36,8 @@ fun Application.configureRouting() {
                     it.id == id
                 } ?: throw IllegalArgumentException("Room was not found")
                 room.addPlayer(this)
-                room.roomState.collectLatest {
-                    when (it){
+                room.roomState.collectLatest { gameStatus ->
+                    when (gameStatus){
                         GameStatus.AWAIT -> {
                             val status = Json.encodeToString(GameStatus.AWAIT)
                             send(Frame.Text(status))
@@ -46,6 +46,11 @@ fun Application.configureRouting() {
                             val status = Json.encodeToString(GameStatus.READY)
                             send(Frame.Text(status))
                             room.startGame(this)
+                        }
+                        GameStatus.SHUTDOWN -> {
+                            room.players.forEach {
+                                it.close(CloseReason(CloseReason.Codes.NORMAL, "Client said BYE"))
+                            }
                         }
                         else ->{}
                     }
