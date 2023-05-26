@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.util.UUID
+import java.util.*
 
 class Room {
     val examples = List(20) {
@@ -51,4 +51,5 @@ class Room {
             roomState.value = GameStatus.READY
         }
     }
+    fun toModel() = RoomRespond(id)
 }

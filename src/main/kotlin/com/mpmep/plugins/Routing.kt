@@ -2,16 +2,12 @@ package com.mpmep.plugins
 
 import com.mpmep.classes.GameStatus
 import com.mpmep.classes.Room
-import com.mpmep.plugins.core.Game
-import io.ktor.server.routing.*
-import io.ktor.server.response.*
 import io.ktor.server.application.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -21,9 +17,9 @@ fun Application.configureRouting() {
         route("/rooms") {
             get {
                 val filteredRooms = rooms.filter {
-                    it.players.size <= 1
+                    it.players.size == 1
                 }
-                call.respond(filteredRooms)
+                call.respond(filteredRooms.map(Room::toModel))
             }
             post {
                 val room = Room()
