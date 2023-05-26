@@ -29,23 +29,15 @@ class Room {
         game.currentExample.onEach { example ->
             if (example is ExampleState.ExampleEnd) {
                 playersFinished[playersFinished.size + 1] = session
-                val statusString = Json.encodeToString(GameStatus.FINISH)
-                session.send(Frame.Text(statusString))
+                roomState.value = GameStatus.FINISH(session)
                 if(playersFinished.size >= 2) {
-                    val loseStatus = Json.encodeToString(GameStatus.LOSE)
-                    val winStatus = Json.encodeToString(GameStatus.WIN)
-                    val enemy = players.find {
-                        it != session
-                    } ?: throw Exception("lol")
                     val enemyGame = games.find {
                         it != game
                     } ?: throw Exception("lol")
                     if (game.quality() > enemyGame.quality()) {
-                        session.send(Frame.Text(winStatus))
-                        enemy.send(Frame.Text(loseStatus))
+                        roomState.value = GameStatus.WIN(session)
                     } else if (game.quality() == enemyGame.quality()) {
-                        playersFinished[1]?.send(Frame.Text(winStatus))
-                        playersFinished[2]?.send(Frame.Text(loseStatus))
+                        roomState.value = GameStatus.WIN(playersFinished[1])
                     }
                     roomState.value = GameStatus.SHUTDOWN
                 }
@@ -53,16 +45,14 @@ class Room {
                 val enemy = players.find {
                     it != session
                 } ?: throw Exception("lol")
-                val statusString = Json.encodeToString(GameStatus.ENEMY_ANSWERED)
-                enemy.send(Frame.Text(statusString))
+                roomState.value = GameStatus.ENEMY_GOT_NEW_EXAMPLE(enemy)
                 val exampleString = Json.encodeToString(example)
                 session.send(Frame.Text(exampleString))
             }
         }.launchIn(session)
 
         game.userMisstake.onEach { _ ->
-            val statusString = Json.encodeToString(GameStatus.FALSE)
-            session.send(Frame.Text(statusString))
+            roomState.value = GameStatus.FALSE(session)
         }.launchIn(session)
 
         session.launch {
