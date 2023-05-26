@@ -1,11 +1,17 @@
 package com.mpmep.classes
 
+import com.mpmep.plugins.core.Game
+import com.mpmep.plugins.core.generateExample
 import io.ktor.websocket.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.UUID
 
 class Room {
+    private val examples = List(20) {
+        generateExample()
+    }
+    val game = Game(examples)
     val id: String = UUID.randomUUID().toString()
     val players = mutableListOf<DefaultWebSocketSession>()
     suspend fun addPlayer(player:DefaultWebSocketSession) {
@@ -20,6 +26,11 @@ class Room {
             players.forEach {
                 val status = Json.encodeToString(GameStatus.READY)
                 it.outgoing.send(Frame.Text(status))
+
+                game.currentExample.collect { example ->
+                    val exampleString = Json.encodeToString(example)
+                    it.outgoing.send(Frame.Text(exampleString))
+                }
             }
         }
     }

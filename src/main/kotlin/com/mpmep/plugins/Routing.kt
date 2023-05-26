@@ -1,11 +1,14 @@
 package com.mpmep.plugins
 
+import com.mpmep.classes.GameStatus
 import com.mpmep.classes.Room
 import io.ktor.server.routing.*
 import io.ktor.server.response.*
 import io.ktor.server.application.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 fun Application.configureRouting() {
     val rooms = mutableListOf<Room>()
@@ -28,10 +31,20 @@ fun Application.configureRouting() {
                     it.id == id
                 } ?: throw IllegalArgumentException("Room was not found")
                 room.addPlayer(this)
+                val game = room.game
                 for (frame in incoming){
                     if (frame is Frame.Text) {
                         val text = frame.readText()
-                        outgoing.send(Frame.Text("YOU SAID: $text"))
+                        game.currentExample.collect { example ->
+                            val challengeStatus = game.checkAnswer(example, text.toInt())
+                            val status: GameStatus = if (!challengeStatus) {
+                                GameStatus.BAD
+                            } else {
+                                GameStatus.TRUE
+                            }
+                            val statusString = Json.encodeToString(status)
+                            outgoing.send(Frame.Text(statusString))
+                        }
                     }
                 }
             }
