@@ -6,6 +6,9 @@ import kotlinx.serialization.Serializable
 enum class GameStatus {
     AWAIT,
     READY,
-    BAD,
-    TRUE,
+    FALSE,
+    ENEMY_ANSWERED,
+    FINISH,
+    WIN,
+    LOSE
 }
