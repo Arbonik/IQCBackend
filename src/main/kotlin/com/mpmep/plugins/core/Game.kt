@@ -20,17 +20,17 @@ class Game(
     }.stateIn(coroutineScope, SharingStarted.Lazily, examples.first())
 
     val userMisstake : MutableSharedFlow<String> = MutableSharedFlow()
+
     fun checkAnswer(answer : Int){
-        val result = examples[_currentExample.value].result() == answer
+        val result = examples.getOrNull(_currentExample.value)?.result() == answer
         if (result) {
             _currentExample.value++
-            userAnswers.add(result)
-        }
-        else {
+        } else {
             coroutineScope.launch {
                 userMisstake.emit("Неверно")
             }
         }
+        userAnswers.add(result)
     }
 
     fun skip(){

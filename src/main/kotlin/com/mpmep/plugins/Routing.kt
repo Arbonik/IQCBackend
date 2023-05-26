@@ -7,7 +7,6 @@ import io.ktor.server.response.*
 import io.ktor.server.application.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -32,45 +31,45 @@ fun Application.configureRouting() {
                     it.id == id
                 } ?: throw IllegalArgumentException("Room was not found")
                 room.addPlayer(this)
-                room.roomState.collectLatest { gameStatus ->
-                    when (gameStatus){
-                        is GameStatus.AWAIT -> {
-                            val status = Json.encodeToString(gameStatus)
-                            send(Frame.Text(status))
-                        }
-                        is GameStatus.READY -> {
-                            val status = Json.encodeToString(gameStatus)
-                            send(Frame.Text(status))
-                            room.startGame(this)
-                        }
-                        is GameStatus.SHUTDOWN -> {
-                            close(CloseReason(CloseReason.Codes.NORMAL, "Room was closed"))
-                        }
-                        is GameStatus.ENEMY_GOT_NEW_EXAMPLE -> {
-                            if (gameStatus.receiver == this) {
-                                val statusString = Json.encodeToString(GameStatus.ENEMY_GOT_NEW_EXAMPLE)
-                                send(Frame.Text(statusString))
-                            }
-                        }
-                        is GameStatus.FALSE -> {
-                            if (gameStatus.receiver == this) {
-                                val statusString = Json.encodeToString(GameStatus.FALSE)
-                                send(Frame.Text(statusString))
-                            }
-                        }
-                        is GameStatus.FINISH -> {
-                            if (gameStatus.receiver == this) {
-                                val statusString = Json.encodeToString(GameStatus.FINISH)
-                                send(Frame.Text(statusString))
-                            }
-                        }
-                        is GameStatus.WIN -> {
+                room.roomState.collect { gameStatus ->
+                    when (gameStatus.gameStatus){
+                        GameStatus.WIN -> {
                             val loseStatus = Json.encodeToString(GameStatus.LOSE)
                             val winStatus = Json.encodeToString(GameStatus.WIN)
                             if (gameStatus.receiver == this) {
                                 send(Frame.Text(winStatus))
                             } else {
                                 send(Frame.Text(loseStatus))
+                            }
+                        }
+                        GameStatus.AWAIT -> {
+                            val status = Json.encodeToString(GameStatus.AWAIT)
+                            send(Frame.Text(status))
+                        }
+                        GameStatus.READY -> {
+                            val status = Json.encodeToString(GameStatus.READY)
+                            send(Frame.Text(status))
+                            room.startGame(this)
+                        }
+                        GameStatus.SHUTDOWN -> {
+                            close(CloseReason(CloseReason.Codes.NORMAL, "Room was closed"))
+                        }
+                        GameStatus.GOT_NEW_EXAMPLE -> {
+                            if (gameStatus.receiver != this){
+                                val statusString = Json.encodeToString(GameStatus.GOT_NEW_EXAMPLE)
+                                send(Frame.Text(statusString))
+                            }
+                        }
+                        GameStatus.FALSE -> {
+                            if (gameStatus.receiver == this) {
+                                val statusString = Json.encodeToString(GameStatus.FALSE)
+                                send(Frame.Text(statusString))
+                            }
+                        }
+                        GameStatus.FINISH -> {
+                            if (gameStatus.receiver == this) {
+                                val statusString = Json.encodeToString(GameStatus.FINISH)
+                                send(Frame.Text(statusString))
                             }
                         }
                         else ->{}
