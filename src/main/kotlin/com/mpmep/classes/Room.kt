@@ -4,13 +4,13 @@ import com.mpmep.plugins.core.ExampleResponse
 import com.mpmep.plugins.core.ExampleState
 import com.mpmep.plugins.core.Game
 import com.mpmep.plugins.core.generateExample
+import com.mpmep.respond
 import io.ktor.websocket.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.*
 
@@ -46,8 +46,7 @@ class Room {
                     roomState.emit(GSWS(GameStatus.SHUTDOWN))
                 }
             } else {
-                val exampleString = Json.encodeToString(example)
-                session.send(Frame.Text(exampleString))
+                session.respond(example)
                 roomState.emit(GSWS(GameStatus.GOT_NEW_EXAMPLE, session))
             }
         }.launchIn(session)

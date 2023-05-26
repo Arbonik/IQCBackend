@@ -2,13 +2,12 @@ package com.mpmep.plugins
 
 import com.mpmep.classes.GameStatus
 import com.mpmep.classes.Room
+import com.mpmep.respond
 import io.ktor.server.routing.*
 import io.ktor.server.response.*
 import io.ktor.server.application.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
 fun Application.configureRouting() {
     val rooms = mutableListOf<Room>()
@@ -34,21 +33,17 @@ fun Application.configureRouting() {
                 room.roomState.collect { gameStatus ->
                     when (gameStatus.gameStatus){
                         GameStatus.WIN -> {
-                            val loseStatus = Json.encodeToString(GameStatus.LOSE)
-                            val winStatus = Json.encodeToString(GameStatus.WIN)
                             if (gameStatus.receiver == this) {
-                                send(Frame.Text(winStatus))
+                                respond(GameStatus.WIN)
                             } else {
-                                send(Frame.Text(loseStatus))
+                                respond(GameStatus.LOSE)
                             }
                         }
                         GameStatus.AWAIT -> {
-                            val status = Json.encodeToString(GameStatus.AWAIT)
-                            send(Frame.Text(status))
+                            respond(GameStatus.AWAIT)
                         }
                         GameStatus.READY -> {
-                            val status = Json.encodeToString(GameStatus.READY)
-                            send(Frame.Text(status))
+                            respond(GameStatus.READY)
                             room.startGame(this)
                         }
                         GameStatus.SHUTDOWN -> {
@@ -56,20 +51,17 @@ fun Application.configureRouting() {
                         }
                         GameStatus.GOT_NEW_EXAMPLE -> {
                             if (gameStatus.receiver != this){
-                                val statusString = Json.encodeToString(GameStatus.GOT_NEW_EXAMPLE)
-                                send(Frame.Text(statusString))
+                                respond(GameStatus.GOT_NEW_EXAMPLE)
                             }
                         }
                         GameStatus.FALSE -> {
                             if (gameStatus.receiver == this) {
-                                val statusString = Json.encodeToString(GameStatus.FALSE)
-                                send(Frame.Text(statusString))
+                                respond(GameStatus.FALSE)
                             }
                         }
                         GameStatus.FINISH -> {
                             if (gameStatus.receiver == this) {
-                                val statusString = Json.encodeToString(GameStatus.FINISH)
-                                send(Frame.Text(statusString))
+                                respond(GameStatus.FINISH)
                             }
                         }
                         else ->{}
