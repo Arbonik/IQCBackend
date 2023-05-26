@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.*
@@ -59,8 +60,10 @@ class Room {
             for (frame in session.incoming) {
                 if (frame is Frame.Text) {
                     val text = frame.readText()
-                    ExampleResponse
-                    game.checkAnswer(text.toInt())
+                    val response = Json.decodeFromString<ExampleResponse>(text)
+                    if (response.isSkip) {
+                        game.skip()
+                    } else game.checkAnswer(response.answer)
                 }
             }
         }
