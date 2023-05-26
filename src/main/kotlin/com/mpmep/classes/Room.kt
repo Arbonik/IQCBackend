@@ -46,7 +46,7 @@ class Room {
                     roomState.emit(GSWS(GameStatus.SHUTDOWN))
                 }
             } else {
-                val exampleString = Json.encodeToString(example)
+                val exampleString = Json.encodeToString(WSServerResponse(example = example))
                 session.send(Frame.Text(exampleString))
                 roomState.emit(GSWS(GameStatus.GOT_NEW_EXAMPLE, session))
             }
