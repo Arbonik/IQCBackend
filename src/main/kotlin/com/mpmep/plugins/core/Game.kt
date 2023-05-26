@@ -5,28 +5,32 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class Game(
-    val examples : List<Example>,
-    val coroutineScope: CoroutineScope
+    private val examples : List<ExampleState.Example>,
+    private val coroutineScope: CoroutineScope
 ){
 
     private val userAnswers : MutableList<Boolean> = mutableListOf()
 
+    fun quality() = userAnswers.count { it }.toFloat() / examples.size.toFloat()
+
     private val _currentExample : MutableStateFlow<Int> = MutableStateFlow(0)
 
-    val currentExample : StateFlow<Example> = _currentExample.map {
-        examples[it]
+    val currentExample : StateFlow<ExampleState> = _currentExample.map {
+        examples.getOrElse(it) { ExampleState.ExampleEnd }
     }.stateIn(coroutineScope, SharingStarted.Lazily, examples.first())
 
     val userMisstake : MutableSharedFlow<String> = MutableSharedFlow()
     fun checkAnswer(answer : Int){
         val result = examples[_currentExample.value].result() == answer
-        if (result)
-            _currentExample.value ++
-        else
+        if (result) {
+            _currentExample.value++
+            userAnswers.add(result)
+        }
+        else {
             coroutineScope.launch {
                 userMisstake.emit("Неверно")
             }
-        userAnswers.add(result)
+        }
     }
 
     fun skip(){
@@ -35,7 +39,7 @@ class Game(
     }
 }
 
-fun generateExample(level : Int = 1): Example {
+fun generateExample(level : Int = 1): ExampleState.Example {
     val negativeN = -(level * 10 / 2)
     val positiveN = (level * 10 / 2)
     val range = negativeN..positiveN
@@ -45,5 +49,5 @@ fun generateExample(level : Int = 1): Example {
         Operate.values().random()
     else
         listOf(Operate.MINUS, Operate.PLUS, Operate.MULTI).random()
-    return Example(first, second, operate)
+    return ExampleState.Example(first, second, operate)
 }
