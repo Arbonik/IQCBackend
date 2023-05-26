@@ -24,12 +24,17 @@ class Room {
         val game = Game(examples, session)
 
         game.currentExample.onEach { example ->
+            val enemy = players.find {
+                it != session
+            } ?: throw Exception("Something happened....")
+            val statusString = Json.encodeToString(GameStatus.ENEMY_ANSWERED)
+            enemy.send(Frame.Text(statusString))
             val exampleString = Json.encodeToString(example)
             session.send(Frame.Text(exampleString))
         }.launchIn(session)
 
         game.userMisstake.onEach { _ ->
-            val statusString = Json.encodeToString(GameStatus.BAD)
+            val statusString = Json.encodeToString(GameStatus.FALSE)
             session.send(Frame.Text(statusString))
         }.launchIn(session)
 

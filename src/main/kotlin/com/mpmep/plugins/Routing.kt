@@ -28,7 +28,7 @@ fun Application.configureRouting() {
             post {
                 val room = Room()
                 rooms.add(room)
-                call.respond("success")
+                call.respond(room.id)
             }
             webSocket("/{id?}") {
                 val id = call.parameters["id"] ?: throw IllegalArgumentException("Room id was excepted")
