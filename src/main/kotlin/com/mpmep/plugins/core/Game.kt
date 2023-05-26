@@ -1,23 +1,32 @@
 package com.mpmep.plugins.core
 
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
-class Game(val examples : List<Example>){
+class Game(
+    val examples : List<Example>,
+    val coroutineScope: CoroutineScope
+){
 
-    val userAnswers : MutableList<Boolean> = mutableListOf()
+    private val userAnswers : MutableList<Boolean> = mutableListOf()
+
     private val _currentExample : MutableStateFlow<Int> = MutableStateFlow(0)
 
-    val currentExample : Flow<Example> = _currentExample.map {
+    val currentExample : StateFlow<Example> = _currentExample.map {
         examples[it]
-    }
+    }.stateIn(coroutineScope, SharingStarted.Lazily, examples.first())
 
-    fun checkAnswer(example: Example, answer : Int):Boolean{
-        val result = example.result() == answer
-        if (result) _currentExample.value ++
-        userAnswers.add(true)
-        return result
+    val userMisstake : MutableSharedFlow<String> = MutableSharedFlow()
+    fun checkAnswer(answer : Int){
+        val result = examples[_currentExample.value].result() == answer
+        if (result)
+            _currentExample.value ++
+        else
+            coroutineScope.launch {
+                userMisstake.emit("Неверно")
+            }
+        userAnswers.add(result)
     }
 
     fun skip(){
