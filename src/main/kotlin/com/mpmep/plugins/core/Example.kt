@@ -1,6 +1,7 @@
 package com.mpmep.plugins.core
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 @Serializable
 sealed class ExampleState {
@@ -14,6 +15,8 @@ sealed class ExampleState {
         val second:Int,
         val op : Operate
     ) : ExampleState() {
+        @Transient
+        var difficulty:Int = 0
         fun result():Int {
             return when (op){
                 Operate.PLUS -> first + second

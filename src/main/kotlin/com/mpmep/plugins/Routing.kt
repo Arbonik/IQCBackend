@@ -25,6 +25,8 @@ fun Application.configureRouting() {
                 call.respond(room.toModel())
             }
             webSocket("/{id?}") {
+                val age = call.request.queryParameters["age"] ?: "0"
+                val gender = call.request.queryParameters["gender"] ?: "NA"
                 val id = call.parameters["id"] ?: throw IllegalArgumentException("Room id was excepted")
                 val room = rooms.find {
                     it.id == id
@@ -44,7 +46,7 @@ fun Application.configureRouting() {
                         }
                         GameStatus.READY -> {
                             respond(GameStatus.READY)
-                            room.startGame(this)
+                            room.startGame(this, gender, age)
                         }
                         GameStatus.SHUTDOWN -> {
                             rooms.remove(room)

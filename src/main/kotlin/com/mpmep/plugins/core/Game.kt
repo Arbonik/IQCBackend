@@ -65,5 +65,7 @@ fun generateExample(level : Int = 1): ExampleState.Example {
         Operate.values().random()
     else
         listOf(Operate.MINUS, Operate.PLUS, Operate.MULTI).random()
-    return ExampleState.Example(first, second, operate)
+    return ExampleState.Example(first, second, operate).apply {
+        difficulty = level
+    }
 }

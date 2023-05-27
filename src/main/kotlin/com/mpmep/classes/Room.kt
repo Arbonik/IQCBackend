@@ -1,5 +1,7 @@
 package com.mpmep.classes
 
+import com.mpmep.plugins.Statistic
+import com.mpmep.plugins.StatisticsService
 import com.mpmep.plugins.core.ExampleResponse
 import com.mpmep.plugins.core.ExampleState
 import com.mpmep.plugins.core.Game
@@ -17,7 +19,7 @@ import java.util.*
 class Room {
     private var playersFinished = mutableMapOf<Int, DefaultWebSocketSession>()
     val examples = List(20) {
-        generateExample()
+        generateExample(it)
     }
 
     val roomState : MutableSharedFlow<GSWS> = MutableSharedFlow()
@@ -25,7 +27,9 @@ class Room {
     val id: String = UUID.randomUUID().toString()
     val players = mutableListOf<DefaultWebSocketSession>()
     val games = mutableListOf<Game>()
-    suspend fun startGame(session:DefaultWebSocketSession) {
+    suspend fun startGame(session:DefaultWebSocketSession, gender:String, age:String) {
+        var oldTime:Long = 0
+        var newTime:Long = 0
         val game = Game(examples, session)
         games.add(game)
         game.currentExample.onEach { example ->
@@ -45,9 +49,19 @@ class Room {
                     }
                     roomState.emit(GSWS(GameStatus.SHUTDOWN))
                 }
-            } else {
+            } else if (example is ExampleState.Example) {
+                newTime = System.currentTimeMillis()
+                val statistic = Statistic(
+                    age.toInt(),
+                    gender,
+                    newTime - oldTime,
+                    example.difficulty,
+                    example.op
+                )
+                StatisticsService.create(statistic)
                 session.respond(example)
                 roomState.emit(GSWS(GameStatus.GOT_NEW_EXAMPLE, session))
+                oldTime = System.currentTimeMillis()
             }
         }.launchIn(session)
 
