@@ -2,15 +2,23 @@ package com.mpmep.plugins
 
 import com.mpmep.classes.GameStatus
 import com.mpmep.classes.Room
+import com.mpmep.plugins.RoomRepository.rooms
 import com.mpmep.respond
 import io.ktor.server.routing.*
 import io.ktor.server.response.*
 import io.ktor.server.application.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
+import kotlinx.coroutines.launch
+import java.util.*
+import kotlin.collections.LinkedHashSet
+
+object RoomRepository {
+    val rooms = Collections.synchronizedSet<Room>(LinkedHashSet())
+}
 
 fun Application.configureRouting() {
-    val rooms = mutableListOf<Room>()
+
     routing {
         route("/rooms") {
             get {
@@ -20,6 +28,7 @@ fun Application.configureRouting() {
                 call.respond(filteredRooms.map(Room::toModel))
             }
             post {
+
                 val room = Room()
                 rooms.add(room)
                 call.respond(room.toModel())
@@ -32,6 +41,10 @@ fun Application.configureRouting() {
                     it.id == id
                 } ?: throw IllegalArgumentException("Room was not found")
                 room.addPlayer(this)
+                launch {
+                    closeReason.await()
+                    room.deletePlayer(this@webSocket)
+                }
                 room.roomState.collect { gameStatus ->
                     when (gameStatus.gameStatus){
                         GameStatus.WIN -> {
@@ -70,6 +83,7 @@ fun Application.configureRouting() {
                         else ->{}
                     }
                 }
+
             }
         }
     }

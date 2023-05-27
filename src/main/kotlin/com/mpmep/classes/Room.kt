@@ -1,5 +1,6 @@
 package com.mpmep.classes
 
+import com.mpmep.plugins.RoomRepository
 import com.mpmep.plugins.Statistic
 import com.mpmep.plugins.StatisticsService
 import com.mpmep.plugins.core.ExampleResponse
@@ -100,4 +101,10 @@ class Room {
         }
     }
     fun toModel() = RoomRespond(id)
+
+    fun deletePlayer(default: DefaultWebSocketSession) {
+        players -= default
+        if (players.isEmpty())
+            RoomRepository.rooms -= this
+    }
 }
