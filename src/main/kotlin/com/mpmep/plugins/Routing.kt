@@ -70,11 +70,7 @@ fun Application.configureRouting() {
                         }
                         GameStatus.GOT_NEW_EXAMPLE -> {
                             if (gameStatus.receiver != this){
-                                val enemy = room.players.find {
-                                    it != gameStatus.receiver
-                                }
-                                val enemyGame = games[enemy] ?: throw Exception()
-                                respond(GameStatus.GOT_NEW_EXAMPLE, enemyGame._currentExample.value)
+                                respond(GameStatus.GOT_NEW_EXAMPLE, games[this]?._currentExample?.value)
                             }
                         }
                         GameStatus.FALSE -> {
