@@ -8,8 +8,8 @@ import org.jetbrains.exposed.sql.transactions.transaction
 
 fun Application.configureDatabases() {
     val database = Database.connect(
-        url = "jdbc:sqlite:/data.db",
-        driver = "org.sqlite.JDBC",
+        "jdbc:sqlite:identifier.sqlite",
+        "org.sqlite.JDBC",
     )
     transaction(database) {
         SchemaUtils.create(Statistics)

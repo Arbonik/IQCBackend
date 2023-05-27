@@ -37,7 +37,7 @@ class Game(
 
     val userMisstake : MutableSharedFlow<String> = MutableSharedFlow()
 
-    fun checkAnswer(answer : Int){
+    fun checkAnswer(answer : Int):Boolean{
         val result = examples.getOrNull(_currentExample.value)?.result() == answer
         if (result) {
             _currentExample.value++
@@ -47,6 +47,7 @@ class Game(
             }
         }
         userAnswers.add(result)
+        return result
     }
 
     fun skip(){
