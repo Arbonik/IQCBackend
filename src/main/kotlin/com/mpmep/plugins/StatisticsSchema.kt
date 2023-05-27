@@ -39,20 +39,6 @@ object StatisticsService {
             it[age] = statistic.age
         }[Statistics.id]
     }
-
-    suspend fun read(id: Int): Statistic? {
-        return dbQuery {
-            Statistics.select { Statistics.id eq id }
-                .map { Statistic(
-                    it[Statistics.age],
-                    it[Statistics.gender],
-                    it[Statistics.time],
-                    it[Statistics.difficulty],
-                    it[Statistics.operator])
-                }
-                .singleOrNull()
-        }
-    }
     suspend fun readAll(): List<Statistic> {
         return dbQuery {
             Statistics.selectAll()
@@ -65,24 +51,6 @@ object StatisticsService {
                         it[Statistics.operator]
                     )
                 }
-        }
-    }
-
-    suspend fun update(id: Int, statistic: Statistic) {
-        dbQuery {
-            Statistics.update({ Statistics.id eq id }) {
-                it[difficulty] = statistic.difficulty
-                it[operator] = statistic.operator
-                it[time] = statistic.time
-                it[gender] = statistic.gender
-                it[age] = statistic.age
-            }
-        }
-    }
-
-    suspend fun delete(id: Int) {
-        dbQuery {
-            Statistics.deleteWhere { Statistics.id.eq(id) }
         }
     }
 }

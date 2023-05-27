@@ -19,7 +19,7 @@ import java.util.*
 class Room {
     private var playersFinished = mutableMapOf<Int, DefaultWebSocketSession>()
     val examples = List(20) {
-        generateExample(it + 1)
+        generateExample(it / 3 + 1)
     }
 
     val roomState : MutableSharedFlow<GSWS> = MutableSharedFlow()
