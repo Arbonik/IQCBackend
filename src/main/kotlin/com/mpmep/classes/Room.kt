@@ -9,9 +9,7 @@ import com.mpmep.plugins.core.Game
 import com.mpmep.plugins.core.generateExample
 import com.mpmep.respond
 import io.ktor.websocket.*
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -106,13 +104,9 @@ class Room {
     fun toModel() = RoomRespond(id)
 
     suspend fun deletePlayer(default: DefaultWebSocketSession) {
-        players -= default
-        if (players.isEmpty())
-            Repository.rooms -= this
-        roomState.collect {
-            if (it.gameStatus != GameStatus.AWAIT) {
-                roomState.emit(GSWS(GameStatus.SHUTDOWN))
-            }
-        }
+        roomState.emit(GSWS(GameStatus.WIN, enemy(default)))
+        roomState.emit(GSWS(GameStatus.SHUTDOWN))
+        players.clear()
+        Repository.rooms -= this
     }
 }
