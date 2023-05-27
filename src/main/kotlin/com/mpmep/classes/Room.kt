@@ -1,7 +1,6 @@
 package com.mpmep.classes
 
 import com.mpmep.plugins.Repository
-import com.mpmep.plugins.Repository.games
 import com.mpmep.plugins.Statistic
 import com.mpmep.plugins.StatisticsService
 import com.mpmep.plugins.core.ExampleResponse
@@ -24,7 +23,13 @@ class Room {
         generateExample(it / 3 + 1)
     }
 
+    val games = mutableMapOf<DefaultWebSocketSession, Game>()
     val roomState : MutableSharedFlow<GSWS> = MutableSharedFlow()
+
+    fun enemy(default: DefaultWebSocketSession) : DefaultWebSocketSession? =
+        players.find {
+            default != it
+        }
 
     val id: String = UUID.randomUUID().toString()
     val players = mutableListOf<DefaultWebSocketSession>()
@@ -38,10 +43,7 @@ class Room {
                 playersFinished[playersFinished.size + 1] = session
                 roomState.emit(GSWS(GameStatus.FINISH, session))
                 if(playersFinished.size >= 2) {
-                    val enemy = players.find {
-                        it != session
-                    }
-                    val enemyGame = games[enemy] ?: throw Exception("lol")
+                    val enemyGame = games[enemy(session)] ?: throw Exception("lol")
                     if (game.quality() > enemyGame.quality()) {
                         roomState.emit(GSWS(GameStatus.WIN, session))
                     } else if (game.quality() == enemyGame.quality()) {
@@ -53,7 +55,7 @@ class Room {
                 }
             } else if (example is ExampleState.Example) {
                 session.respond(example, game._currentExample.value)
-                roomState.emit(GSWS(GameStatus.GOT_NEW_EXAMPLE, session))
+                enemy(session)?.respond(GameStatus.GOT_NEW_EXAMPLE, game._currentExample.value)
             }
         }.launchIn(session)
 

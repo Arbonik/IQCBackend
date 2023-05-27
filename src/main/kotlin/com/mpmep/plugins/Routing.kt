@@ -2,7 +2,6 @@ package com.mpmep.plugins
 
 import com.mpmep.classes.GameStatus
 import com.mpmep.classes.Room
-import com.mpmep.plugins.Repository.games
 import com.mpmep.plugins.Repository.rooms
 import com.mpmep.plugins.core.Game
 import com.mpmep.respond
@@ -17,7 +16,6 @@ import kotlin.collections.LinkedHashSet
 
 object Repository {
     val rooms = Collections.synchronizedSet<Room>(LinkedHashSet())
-    val games = mutableMapOf<DefaultWebSocketSession, Game>()
 }
 
 fun Application.configureRouting() {
@@ -69,13 +67,6 @@ fun Application.configureRouting() {
                             close(CloseReason(CloseReason.Codes.NORMAL, "Room was closed"))
                         }
                         GameStatus.GOT_NEW_EXAMPLE -> {
-                            if (gameStatus.receiver != this){
-                                val enemy = room.players.find {
-                                    it != gameStatus.receiver
-                                }
-                                val enemyGame = games[enemy] ?: throw Exception()
-                                respond(GameStatus.GOT_NEW_EXAMPLE, enemyGame._currentExample.value)
-                            }
                         }
                         GameStatus.FALSE -> {
                             if (gameStatus.receiver == this) {

@@ -9,19 +9,11 @@ import kotlinx.serialization.json.Json
 
 suspend fun DefaultWebSocketSession.respond(data:Any, score:Int? = null) {
     if (data is GameStatus){
-        val message = if (score != null) {
-            WSServerResponse(gameStatus = data, score = score)
-        } else {
-            WSServerResponse(gameStatus = data)
-        }
+        val message = WSServerResponse(gameStatus = data, score = score)
         send(Frame.Text(Json.encodeToString(message)))
     }
     if (data is ExampleState.Example){
-        val message = if (score != null) {
-            WSServerResponse(example = data, score = score)
-        } else {
-            WSServerResponse(example = data)
-        }
+        val message = WSServerResponse(example = data, score = score)
         val status = Json.encodeToString(message)
         send(Frame.Text(status))
     }
