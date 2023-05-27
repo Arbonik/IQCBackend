@@ -47,6 +47,7 @@ fun Application.configureRouting() {
                             room.startGame(this)
                         }
                         GameStatus.SHUTDOWN -> {
+                            rooms.remove(room)
                             close(CloseReason(CloseReason.Codes.NORMAL, "Room was closed"))
                         }
                         GameStatus.GOT_NEW_EXAMPLE -> {
