@@ -4,9 +4,25 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+
+interface GameStorage{
+    fun saveAnswer(
+        lvl : Int,
+        op : Operate,
+        time : Long // время прошедшее с публикации задания в currentExample до того как пользователь на него ответил
+    )
+}
+
+class NoStorage : GameStorage{
+    override fun saveAnswer(lvl: Int, op: Operate, time: Long) {
+
+    }
+}
+
 class Game(
     private val examples : List<ExampleState.Example>,
-    private val coroutineScope: CoroutineScope
+    private val coroutineScope: CoroutineScope,
+    private val gameStorage: GameStorage = NoStorage()
 ){
 
     private val userAnswers : MutableList<Boolean> = mutableListOf()
