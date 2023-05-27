@@ -29,7 +29,7 @@ class Game(
 
     fun quality() = userAnswers.count { it }.toFloat() / examples.size.toFloat()
 
-    private val _currentExample: MutableStateFlow<Int> = MutableStateFlow(0)
+    val _currentExample: MutableStateFlow<Int> = MutableStateFlow(0)
 
     val currentExample: StateFlow<ExampleState> = _currentExample.map {
         examples.getOrElse(it) { ExampleState.ExampleEnd }

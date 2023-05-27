@@ -1,6 +1,7 @@
 package com.mpmep.classes
 
-import com.mpmep.plugins.RoomRepository
+import com.mpmep.plugins.Repository
+import com.mpmep.plugins.Repository.games
 import com.mpmep.plugins.Statistic
 import com.mpmep.plugins.StatisticsService
 import com.mpmep.plugins.core.ExampleResponse
@@ -27,10 +28,9 @@ class Room {
 
     val id: String = UUID.randomUUID().toString()
     val players = mutableListOf<DefaultWebSocketSession>()
-    val games = mutableListOf<Game>()
     suspend fun startGame(session:DefaultWebSocketSession, gender:String, age:String) {
         val game = Game(examples, session)
-        games.add(game)
+        games[session] = game
 
         var lastTime:Long = System.currentTimeMillis()
         game.currentExample.onEach { example ->
@@ -38,9 +38,10 @@ class Room {
                 playersFinished[playersFinished.size + 1] = session
                 roomState.emit(GSWS(GameStatus.FINISH, session))
                 if(playersFinished.size >= 2) {
-                    val enemyGame = games.find {
-                        it != game
-                    } ?: throw Exception("lol")
+                    val enemy = players.find {
+                        it != session
+                    }
+                    val enemyGame = games[enemy] ?: throw Exception("lol")
                     if (game.quality() > enemyGame.quality()) {
                         roomState.emit(GSWS(GameStatus.WIN, session))
                     } else if (game.quality() == enemyGame.quality()) {
@@ -51,7 +52,7 @@ class Room {
                     roomState.emit(GSWS(GameStatus.SHUTDOWN))
                 }
             } else if (example is ExampleState.Example) {
-                session.respond(example)
+                session.respond(example, game._currentExample.value)
                 roomState.emit(GSWS(GameStatus.GOT_NEW_EXAMPLE, session))
             }
         }.launchIn(session)
@@ -102,9 +103,14 @@ class Room {
     }
     fun toModel() = RoomRespond(id)
 
-    fun deletePlayer(default: DefaultWebSocketSession) {
+    suspend fun deletePlayer(default: DefaultWebSocketSession) {
         players -= default
         if (players.isEmpty())
-            RoomRepository.rooms -= this
+            Repository.rooms -= this
+        roomState.collect {
+            if (it.gameStatus != GameStatus.AWAIT) {
+                roomState.emit(GSWS(GameStatus.SHUTDOWN))
+            }
+        }
     }
 }

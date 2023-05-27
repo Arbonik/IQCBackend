@@ -2,7 +2,9 @@ package com.mpmep.plugins
 
 import com.mpmep.classes.GameStatus
 import com.mpmep.classes.Room
-import com.mpmep.plugins.RoomRepository.rooms
+import com.mpmep.plugins.Repository.games
+import com.mpmep.plugins.Repository.rooms
+import com.mpmep.plugins.core.Game
 import com.mpmep.respond
 import io.ktor.server.routing.*
 import io.ktor.server.response.*
@@ -13,8 +15,9 @@ import kotlinx.coroutines.launch
 import java.util.*
 import kotlin.collections.LinkedHashSet
 
-object RoomRepository {
+object Repository {
     val rooms = Collections.synchronizedSet<Room>(LinkedHashSet())
+    val games = mutableMapOf<DefaultWebSocketSession, Game>()
 }
 
 fun Application.configureRouting() {
@@ -67,7 +70,11 @@ fun Application.configureRouting() {
                         }
                         GameStatus.GOT_NEW_EXAMPLE -> {
                             if (gameStatus.receiver != this){
-                                respond(GameStatus.GOT_NEW_EXAMPLE)
+                                val enemy = room.players.find {
+                                    it != gameStatus.receiver
+                                }
+                                val enemyGame = games[enemy] ?: throw Exception()
+                                respond(GameStatus.GOT_NEW_EXAMPLE, enemyGame._currentExample.value)
                             }
                         }
                         GameStatus.FALSE -> {
