@@ -7,13 +7,22 @@ import io.ktor.websocket.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-suspend fun DefaultWebSocketSession.respond(data:Any) {
+suspend fun DefaultWebSocketSession.respond(data:Any, score:Int? = null) {
     if (data is GameStatus){
-        val message = WSServerResponse(gameStatus = data)
+        val message = if (score != null) {
+            WSServerResponse(gameStatus = data, score = score)
+        } else {
+            WSServerResponse(gameStatus = data)
+        }
         send(Frame.Text(Json.encodeToString(message)))
     }
     if (data is ExampleState.Example){
-        val status = Json.encodeToString(WSServerResponse(example = data))
+        val message = if (score != null) {
+            WSServerResponse(example = data, score = score)
+        } else {
+            WSServerResponse(example = data)
+        }
+        val status = Json.encodeToString(message)
         send(Frame.Text(status))
     }
 }

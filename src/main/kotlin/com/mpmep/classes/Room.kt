@@ -1,5 +1,9 @@
 package com.mpmep.classes
 
+import com.mpmep.plugins.Repository
+import com.mpmep.plugins.Repository.games
+import com.mpmep.plugins.Statistic
+import com.mpmep.plugins.StatisticsService
 import com.mpmep.plugins.core.ExampleResponse
 import com.mpmep.plugins.core.ExampleState
 import com.mpmep.plugins.core.Game
@@ -17,25 +21,27 @@ import java.util.*
 class Room {
     private var playersFinished = mutableMapOf<Int, DefaultWebSocketSession>()
     val examples = List(20) {
-        generateExample()
+        generateExample(it / 3 + 1)
     }
 
     val roomState : MutableSharedFlow<GSWS> = MutableSharedFlow()
 
     val id: String = UUID.randomUUID().toString()
     val players = mutableListOf<DefaultWebSocketSession>()
-    val games = mutableListOf<Game>()
-    suspend fun startGame(session:DefaultWebSocketSession) {
+    suspend fun startGame(session:DefaultWebSocketSession, gender:String, age:String) {
         val game = Game(examples, session)
-        games.add(game)
+        games[session] = game
+
+        var lastTime:Long = System.currentTimeMillis()
         game.currentExample.onEach { example ->
             if (example is ExampleState.ExampleEnd) {
                 playersFinished[playersFinished.size + 1] = session
                 roomState.emit(GSWS(GameStatus.FINISH, session))
                 if(playersFinished.size >= 2) {
-                    val enemyGame = games.find {
-                        it != game
-                    } ?: throw Exception("lol")
+                    val enemy = players.find {
+                        it != session
+                    }
+                    val enemyGame = games[enemy] ?: throw Exception("lol")
                     if (game.quality() > enemyGame.quality()) {
                         roomState.emit(GSWS(GameStatus.WIN, session))
                     } else if (game.quality() == enemyGame.quality()) {
@@ -45,8 +51,8 @@ class Room {
                     }
                     roomState.emit(GSWS(GameStatus.SHUTDOWN))
                 }
-            } else {
-                session.respond(example)
+            } else if (example is ExampleState.Example) {
+                session.respond(example, game._currentExample.value)
                 roomState.emit(GSWS(GameStatus.GOT_NEW_EXAMPLE, session))
             }
         }.launchIn(session)
@@ -62,7 +68,22 @@ class Room {
                     val response = Json.decodeFromString<ExampleResponse>(text)
                     if (response.isSkip) {
                         game.skip()
-                    } else game.checkAnswer(response.answer)
+                    } else {
+                        if (game.checkAnswer(response.answer)){
+                            val deltaTime = System.currentTimeMillis() - lastTime
+                            lastTime = System.currentTimeMillis()
+                            if (game.currentExample.value is ExampleState.Example) {
+                                val statistic = Statistic(
+                                    age.toInt(),
+                                    gender,
+                                    deltaTime,
+                                    (game.currentExample.value as ExampleState.Example).difficulty,
+                                    (game.currentExample.value as ExampleState.Example).op
+                                )
+                                StatisticsService.create(statistic)
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -81,4 +102,15 @@ class Room {
         }
     }
     fun toModel() = RoomRespond(id)
+
+    suspend fun deletePlayer(default: DefaultWebSocketSession) {
+        players -= default
+        if (players.isEmpty())
+            Repository.rooms -= this
+        roomState.collect {
+            if (it.gameStatus != GameStatus.AWAIT) {
+                roomState.emit(GSWS(GameStatus.SHUTDOWN))
+            }
+        }
+    }
 }
