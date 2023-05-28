@@ -18,8 +18,17 @@ object Repository {
 }
 
 fun Application.configureRouting() {
-
     routing {
+        get("/playersOnline") {
+            var n = 0
+            rooms.forEach {
+                n += it.players.size
+            }
+            call.respond(n)
+        }
+        get("/allRooms") {
+            call.respond(rooms.map(Room::toModel))
+        }
         route("/rooms") {
             get {
                 val filteredRooms = rooms.filter {
@@ -28,7 +37,6 @@ fun Application.configureRouting() {
                 call.respond(filteredRooms.map(Room::toModel))
             }
             post {
-
                 val room = Room()
                 rooms.add(room)
                 call.respond(room.toModel())

@@ -17,14 +17,14 @@ import java.util.*
 
 class Room {
     private var playersFinished = mutableMapOf<Int, DefaultWebSocketSession>()
-    val examples = List(20) {
+    val examples = List(10) {
         generateExample(it / 3 + 1)
     }
 
     val games = mutableMapOf<DefaultWebSocketSession, Game>()
     val roomState : MutableSharedFlow<GSWS> = MutableSharedFlow()
 
-    fun enemy(default: DefaultWebSocketSession) : DefaultWebSocketSession? =
+    private fun enemy(default: DefaultWebSocketSession) : DefaultWebSocketSession? =
         players.find {
             default != it
         }
